@@ -1,0 +1,25 @@
+{
+  "name": "saludario-api",
+  "version": "1.0.0",
+  "description": "API to keep track of your daily meals.",
+  "main": "src/server.js",
+  "scripts": {
+    "test": "jest --env=node",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "author": "Javier Sierra <agradecido@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.8.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "jest": "^29.7.0",
+    "typescript": "^5.7.2"
+  }
+}
