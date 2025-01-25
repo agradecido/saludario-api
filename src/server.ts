@@ -5,6 +5,10 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
+import authRoutes from './routes/authRoutes';
+import foodEntriesRoutes from './routes/foodEntries';
+import listEndpoints from 'express-list-routes';
+
 
 dotenv.config();
 
@@ -22,9 +26,12 @@ app.get('/', (req, res) => {
     res.send('Food Diary API is running.');
 });
 
-// Define routes (will be implemented later)
-// Example: app.use('/api/food-entries', require('./routes/foodEntries'));
-// Example: app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authRoutes);
+app.use('/api/food-entries', foodEntriesRoutes);
+
+// Listar rutas al iniciar el servidor
+console.log('Registered Routes:');
+listEndpoints(app);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

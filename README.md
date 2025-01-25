@@ -58,14 +58,6 @@ The API will be accessible at http://localhost:5000.
     DELETE /api/food-entries/:id  # Delete a food entry.
     ```
 
-## 🍏 Scripts
-    ```bash
-    npm run dev    # Start Dev Server (with ts-node)
-    npm run build  # Build for Production
-    npm start      # Start Production Server
-    npm test       # Run Tests
-    ```
-
 ## 🏋️‍♂️ Contributing
 1. Fork the repository and create a new branch for your feature/fix.
 2. Make changes and ensure all tests pass.
