@@ -1,7 +1,7 @@
 
 # 🥑 Saludario API 🍏
 
-**Saludario** is a web-based food diary application focused on health. This API allows users to log their meals, view daily entries, and potentially correlate future symptoms with past meals. Built with Node.js, Express, TypeScript, and MongoDB, the Saludario API serves as the backend layer for the Saludario web application.
+**Saludario** is a web-based food diary application focused on health. This API allows users to log their meals, view daily entries, and potentially correlate future symptoms with past meals. Built with Node.js, Express, TypeScript and MongoDB, the Saludario API serves as the backend layer for the Saludario web application.
 
 ## 🍒 Features
 
