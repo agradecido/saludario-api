@@ -1,0 +1,17 @@
+.vscode
+.env
+node_modules
+dist
+*.log
+*.env
+.DS_Store
+.idea
+*.zip
+*.gz
+*.tar
+*.sql
+*.bak
+*.tmp
+*.swp
+
+
