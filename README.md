@@ -36,6 +36,7 @@ This repository currently contains technical planning artifacts. Implementation 
 ## Reference Documents
 
 - Technical proposal: [docs/TECHNICAL_PROPOSAL.md](./docs/TECHNICAL_PROPOSAL.md)
+- API contract baseline: [docs/API_CONTRACT.md](./docs/API_CONTRACT.md)
 - Delivery milestones: [docs/MILESTONES.md](./docs/MILESTONES.md)
 - Agent/operating rules: [AGENTS.md](./AGENTS.md)
 

@@ -21,7 +21,7 @@ Checklist:
 - [x] Pagination strategy defined for entry listing: cursor `(consumed_at, id)` descending
 - [ ] Architecture skeleton and folder conventions approved
 - [ ] Initial schema/migration plan drafted (`users`, `meal_categories`, `food_entries`, `auth_sessions`, `symptom_events`)
-- [ ] Endpoint definition-of-done documented
+- [x] Endpoint definition-of-done documented (`docs/API_CONTRACT.md`, March 8, 2026)
 
 Exit criteria:
 - Team agrees on structure, standards, and database baseline
@@ -33,7 +33,7 @@ Objectives:
 - Enforce strict per-user account ownership boundaries
 
 Checklist:
-- [ ] Auth endpoint contract documented
+- [x] Auth endpoint contract documented (`docs/API_CONTRACT.md`, March 8, 2026)
 - [ ] Password hashing and session policy documented (email/password only, no email verification in v1)
 - [ ] Ownership rules documented for protected routes
 - [ ] Critical auth test scenarios defined
@@ -48,9 +48,9 @@ Objectives:
 - Support browsing/history by date and meal category
 
 Checklist:
-- [ ] Food entry endpoint contract documented
-- [ ] Filter/query behavior specified (date range, category, pagination rules)
-- [ ] Last-write-wins update behavior explicitly documented
+- [x] Food entry endpoint contract documented (`docs/API_CONTRACT.md`, March 8, 2026)
+- [x] Filter/query behavior specified (date range, category, pagination rules) (`docs/API_CONTRACT.md`, March 8, 2026)
+- [x] Last-write-wins update behavior explicitly documented (`docs/API_CONTRACT.md`, March 8, 2026)
 - [ ] Critical food-entry test scenarios defined
 
 Exit criteria:
@@ -63,8 +63,8 @@ Objectives:
 - Keep correlation logic out of MVP
 
 Checklist:
-- [ ] `symptom_events` data contract documented
-- [ ] Internal symptom API boundaries documented
+- [x] `symptom_events` data contract documented (`docs/API_CONTRACT.md`, March 8, 2026)
+- [x] Internal symptom API boundaries documented (`docs/API_CONTRACT.md`, March 8, 2026)
 - [ ] Indexing and future extensibility review completed
 
 Exit criteria:
