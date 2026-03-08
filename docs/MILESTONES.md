@@ -16,6 +16,9 @@ Objectives:
 - Define logging and validation standards
 
 Checklist:
+- [x] ORM decision closed: Prisma selected (March 8, 2026)
+- [x] API error format defined: RFC 7807 Problem Details (`application/problem+json`) with `code` and `request_id`
+- [x] Pagination strategy defined for entry listing: cursor `(consumed_at, id)` descending
 - [ ] Architecture skeleton and folder conventions approved
 - [ ] Initial schema/migration plan drafted (`users`, `meal_categories`, `food_entries`, `auth_sessions`, `symptom_events`)
 - [ ] Endpoint definition-of-done documented

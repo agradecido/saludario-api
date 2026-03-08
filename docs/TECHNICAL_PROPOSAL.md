@@ -17,15 +17,20 @@
 - Frontend: **Next.js (React + TypeScript)**.
 - Backend: **Node.js + Fastify + TypeScript** (modular monolith).
 - Database: **PostgreSQL 16+**.
-- ORM/migrations: **Prisma** (or Drizzle if you prefer SQL-first ergonomics).
+- ORM/migrations: **Prisma**.
 - Authentication: **Email/password with Argon2id**, server-managed sessions in DB, secure HTTP-only cookies.
 - API style: **REST JSON**, versioned as `/api/v1`, OpenAPI spec generated from code.
+- API errors: **RFC 7807 Problem Details** (`application/problem+json`) plus stable `code` and `request_id` extensions.
+- Pagination: **Cursor-based** for food-entry listing, ordered by `(consumed_at desc, id desc)`.
 - Infrastructure: **Local-first development setup** for now (no cloud deployment in MVP phase).
 - Deployment: **Local Docker Compose** (API + PostgreSQL) as the primary runtime target until cloud approval.
 - Observability/logging: **Pino structured logs** in local runtime; centralized sink and **Sentry** when hosted environments are introduced.
 - Testing: **Vitest/Jest** (unit), **Supertest** (API integration), **Playwright** (critical e2e paths).
 
 # 3. Stack Tradeoffs and Alternatives
+- Prisma vs Drizzle:
+- Prisma was selected for MVP due to team familiarity, schema clarity, and migration ergonomics.
+- Drizzle remains a strong SQL-first alternative but adds decision overhead right now without clear MVP upside.
 - Fastify vs NestJS:
 - Fastify is lighter/faster and simpler for MVP.
 - NestJS gives more scaffolding but adds framework complexity and ceremony.
@@ -159,3 +164,6 @@
 5. Approved: Email/password only for v1 (no social login).
 6. Approved: Include symptom tracking in schema and internal API surface.
 7. Approved: Include security specialist for MVP; data/analytics specialist deferred.
+8. Approved (March 8, 2026): Use Prisma as ORM/migrations baseline.
+9. Approved (March 8, 2026): Use RFC 7807 Problem Details with `code` and `request_id` API extensions.
+10. Approved (March 8, 2026): Use cursor-based pagination for food-entry listing with `(consumed_at, id)` ordering.
