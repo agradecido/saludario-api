@@ -8,6 +8,7 @@ import { requestIdHook } from "../../../src/common/request-id.js";
 import { authRoutes } from "../../../src/modules/auth/auth.routes.js";
 import { categoriesRoutes } from "../../../src/modules/categories/categories.routes.js";
 import { entriesRoutes } from "../../../src/modules/entries/entries.routes.js";
+import { symptomsRoutes } from "../../../src/modules/symptoms/symptoms.routes.js";
 import { rateLimitPlugin } from "../../../src/plugins/rate-limit.js";
 import { sessionPlugin } from "../../../src/plugins/session.js";
 
@@ -52,11 +53,23 @@ interface TestFoodEntryRecord {
   updatedAt: Date;
 }
 
+interface TestSymptomEventRecord {
+  id: string;
+  userId: string;
+  symptomCode: string;
+  severity: number;
+  occurredAt: Date;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface AuthTestStore {
   users: TestUserRecord[];
   authSessions: TestAuthSessionRecord[];
   mealCategories: TestMealCategoryRecord[];
   foodEntries: TestFoodEntryRecord[];
+  symptomEvents: TestSymptomEventRecord[];
 }
 
 function hashValue(value: string): string {
@@ -136,6 +149,40 @@ function matchesEntryWhere(
   }
 
   return OR.some((clause) => matchesEntryWhere(entry, clause as Record<string, unknown>));
+}
+
+function compareSymptomsDescending(left: TestSymptomEventRecord, right: TestSymptomEventRecord): number {
+  const occurredAtDiff = right.occurredAt.getTime() - left.occurredAt.getTime();
+  if (occurredAtDiff !== 0) {
+    return occurredAtDiff;
+  }
+
+  return right.id.localeCompare(left.id);
+}
+
+function matchesSymptomWhere(
+  event: TestSymptomEventRecord,
+  where: Record<string, unknown> | undefined
+): boolean {
+  if (!where) {
+    return true;
+  }
+
+  const { OR, ...rest } = where;
+  const baseMatches = Object.entries(rest).every(([key, value]) => {
+    const eventValue = event[key as keyof TestSymptomEventRecord];
+    return matchesScalar(eventValue, value);
+  });
+
+  if (!baseMatches) {
+    return false;
+  }
+
+  if (!Array.isArray(OR) || OR.length === 0) {
+    return true;
+  }
+
+  return OR.some((clause) => matchesSymptomWhere(event, clause as Record<string, unknown>));
 }
 
 function createPrismaMock(store: AuthTestStore) {
@@ -421,6 +468,57 @@ function createPrismaMock(store: AuthTestStore) {
         return entries.map(attachMealCategory);
       }
     },
+    symptomEvent: {
+      async create({
+        data
+      }: {
+        data: {
+          userId: string;
+          symptomCode: string;
+          severity: number;
+          occurredAt: Date;
+          notes?: string;
+        };
+      }) {
+        const now = new Date();
+        const event: TestSymptomEventRecord = {
+          id: randomUUID(),
+          userId: data.userId,
+          symptomCode: data.symptomCode,
+          severity: data.severity,
+          occurredAt: data.occurredAt,
+          notes: data.notes ?? null,
+          createdAt: now,
+          updatedAt: now
+        };
+
+        store.symptomEvents.push(event);
+        return event;
+      },
+      async findFirst({
+        where
+      }: {
+        where?: Record<string, unknown>;
+      }) {
+        return (
+          store.symptomEvents
+            .filter((candidate) => matchesSymptomWhere(candidate, where))
+            .sort(compareSymptomsDescending)[0] ?? null
+        );
+      },
+      async findMany({
+        where,
+        take
+      }: {
+        where?: Record<string, unknown>;
+        take?: number;
+      }) {
+        return store.symptomEvents
+          .filter((candidate) => matchesSymptomWhere(candidate, where))
+          .sort(compareSymptomsDescending)
+          .slice(0, typeof take === "number" ? take : store.symptomEvents.length);
+      }
+    },
     hashValue
   };
 }
@@ -438,7 +536,8 @@ export async function createAuthTestApp(): Promise<{
       { id: 3, code: "dinner", label: "Dinner", sortOrder: 3 },
       { id: 4, code: "snack", label: "Snack", sortOrder: 4 }
     ],
-    foodEntries: []
+    foodEntries: [],
+    symptomEvents: []
   };
   const prisma = createPrismaMock(store);
 
@@ -453,6 +552,7 @@ export async function createAuthTestApp(): Promise<{
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
   await app.register(categoriesRoutes, { prefix: "/api/v1/categories" });
   await app.register(entriesRoutes, { prefix: "/api/v1/entries" });
+  await app.register(symptomsRoutes, { prefix: "/api/v1/internal/symptoms" });
 
   return { app, store };
 }

@@ -258,35 +258,45 @@ Objetivo: CRUD completo de food entries con filtros por fecha y categoría, pagi
 
 Objetivo: endpoints internos de symptom events (CRUD parcial) para preparar extensibilidad futura.
 
+**Current progress**
+- [x] Symptom schemas, repository, service, and internal routes implemented
+- [x] Cursor pagination for `(occurred_at, id)` implemented
+- [x] Unit and integration coverage for create/list/get, filters, validation, and ownership implemented
+
 **Steps**
 
-1. **Symptoms schemas** (`src/modules/symptoms/symptoms.schemas.ts`)
+1. **Symptoms schemas** (`src/modules/symptoms/symptoms.schemas.ts`) — implemented
    - `createSymptomSchema`: symptom_code (string), severity (int 1-5), occurred_at (ISO datetime), notes?
    - `listSymptomsQuerySchema`: from?, to?, symptom_code?, limit?, cursor?
    - `symptomParamsSchema`: symptom_event_id (UUID)
 
-2. **Symptoms repository** (`src/modules/symptoms/symptoms.repository.ts`) — *parallel with step 1*
+2. **Symptoms repository** (`src/modules/symptoms/symptoms.repository.ts`) — implemented
    - `create(userId, data)`, `findById(id, userId)`, `list(userId, filters)` — misma estructura que entries repository
 
-3. **Symptoms service** (`src/modules/symptoms/symptoms.service.ts`) — *depends on steps 1, 2*
+3. **Symptoms service** (`src/modules/symptoms/symptoms.service.ts`) — implemented
    - Orquesta repository, aplica cursor pagination
 
-4. **Symptoms routes** (`src/modules/symptoms/symptoms.routes.ts`) — *depends on step 3*
+4. **Symptoms routes** (`src/modules/symptoms/symptoms.routes.ts`) — implemented
    - `POST /api/v1/internal/symptoms/events` → 201
    - `GET /api/v1/internal/symptoms/events` → 200 con paginación
    - `GET /api/v1/internal/symptoms/events/:symptom_event_id` → 200 / 404
    - Todos protegidos con `requireAuth`
 
-5. **Symptoms tests** — *depends on step 4*
+5. **Symptoms tests** — implemented
    - Unit: `src/modules/symptoms/symptoms.test.ts`
    - Integration: `tests/integration/symptoms.integration.test.ts` (create → list → get; ownership isolation)
 
 **Relevant files**
 - `src/modules/symptoms/symptoms.routes.ts` — endpoints según API_CONTRACT.md §7
 - `src/modules/symptoms/symptoms.repository.ts` — reusar patrón de entries.repository
+- `src/modules/symptoms/symptoms.service.ts` — listing, ownership, and cursor handling
+- `src/modules/symptoms/symptoms.schemas.ts` — validation for create/list/get
+- `src/modules/symptoms/symptoms.test.ts` — unit coverage for pagination and ownership
 - `tests/integration/symptoms.integration.test.ts`
+- `tests/integration/helpers/create-auth-test-app.ts` — harness stateful para auth + categories + entries + symptoms
 
 **Verification**
+- `npm run typecheck` y `npm test` pasan
 - Integration tests pasan: create → list → get symptom events
 - Ownership: user A no ve symptoms de user B
 - Severity fuera de rango 1-5 → 400
