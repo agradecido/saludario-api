@@ -5,6 +5,9 @@ import type { SessionManager } from "../../plugins/session.js";
 import type { UsersRepository } from "../users/users.repository.js";
 import { hashPassword, verifyPassword } from "./password.js";
 
+const DUMMY_PASSWORD_HASH =
+  "$argon2id$v=19$m=19456,t=2,p=1$CHM0Q352yPmi16qErpRSKA$BsMOUsOXW1ANqY1ttaEcWWLbZopuO6G3xCo5yh+cE7k";
+
 export interface AuthRequestMetadata {
   ipAddress?: string | null;
   userAgent?: string | null;
@@ -148,6 +151,7 @@ export function buildAuthService({
     async login(input, metadata) {
       const user = await usersRepository.findByEmail(input.email);
       if (!user) {
+        await verifyPassword(DUMMY_PASSWORD_HASH, input.password);
         throw createProblemError(
           401,
           "UNAUTHORIZED",

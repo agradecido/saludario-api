@@ -1,0 +1,22 @@
+ALTER TABLE "users"
+  ALTER COLUMN "email" TYPE VARCHAR(320),
+  ALTER COLUMN "password_hash" TYPE VARCHAR(255),
+  ALTER COLUMN "timezone" TYPE VARCHAR(100);
+
+ALTER TABLE "meal_categories"
+  ALTER COLUMN "code" TYPE VARCHAR(32),
+  ALTER COLUMN "label" TYPE VARCHAR(50);
+
+ALTER TABLE "auth_sessions"
+  ALTER COLUMN "session_token_hash" TYPE VARCHAR(64),
+  ALTER COLUMN "ip_hash" TYPE VARCHAR(64),
+  ALTER COLUMN "user_agent" TYPE VARCHAR(1024);
+
+ALTER TABLE "food_entries"
+  ALTER COLUMN "food_name" TYPE VARCHAR(500),
+  ALTER COLUMN "quantity_unit" TYPE VARCHAR(50),
+  ALTER COLUMN "notes" TYPE VARCHAR(2000);
+
+ALTER TABLE "symptom_events"
+  ALTER COLUMN "symptom_code" TYPE VARCHAR(100),
+  ALTER COLUMN "notes" TYPE VARCHAR(2000);

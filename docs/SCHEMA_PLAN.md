@@ -38,9 +38,9 @@ datasource db {
 
 model User {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  timezone     String    @default("UTC")
+  email        String    @unique @db.VarChar(320)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  timezone     String    @default("UTC") @db.VarChar(100)
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
@@ -56,8 +56,8 @@ model User {
 
 model MealCategory {
   id        Int    @id @default(autoincrement())
-  code      String @unique                          // breakfast | lunch | dinner | snack
-  label     String
+  code      String @unique @db.VarChar(32)          // breakfast | lunch | dinner | snack
+  label     String @db.VarChar(50)
   sortOrder Int    @default(0) @map("sort_order")
 
   foodEntries FoodEntry[]
@@ -70,12 +70,12 @@ model MealCategory {
 model AuthSession {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId           String    @map("user_id") @db.Uuid
-  sessionTokenHash String    @map("session_token_hash")
+  sessionTokenHash String    @map("session_token_hash") @db.VarChar(64)
   expiresAt        DateTime  @map("expires_at") @db.Timestamptz
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
   revokedAt        DateTime? @map("revoked_at") @db.Timestamptz
-  ipHash           String?   @map("ip_hash")
-  userAgent        String?   @map("user_agent")
+  ipHash           String?   @map("ip_hash") @db.VarChar(64)
+  userAgent        String?   @map("user_agent") @db.VarChar(1024)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -90,10 +90,10 @@ model FoodEntry {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         String   @map("user_id") @db.Uuid
   mealCategoryId Int      @map("meal_category_id")
-  foodName       String   @map("food_name")
+  foodName       String   @map("food_name") @db.VarChar(500)
   quantityValue  Decimal? @map("quantity_value") @db.Decimal(10, 2)
-  quantityUnit   String?  @map("quantity_unit")
-  notes          String?
+  quantityUnit   String?  @map("quantity_unit") @db.VarChar(50)
+  notes          String?  @db.VarChar(2000)
   consumedAt     DateTime @map("consumed_at") @db.Timestamptz
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -111,10 +111,10 @@ model FoodEntry {
 model SymptomEvent {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId      String   @map("user_id") @db.Uuid
-  symptomCode String   @map("symptom_code")
+  symptomCode String   @map("symptom_code") @db.VarChar(100)
   severity    Int      @default(1)                    // 1-5 scale
   occurredAt  DateTime @map("occurred_at") @db.Timestamptz
-  notes       String?
+  notes       String?  @db.VarChar(2000)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -155,12 +155,23 @@ Seed is idempotent (upsert by `code`).
 
 ### Password storage
 - `password_hash` stores the full Argon2id output string (includes salt, params, and hash).
-- Typical length: ~97 chars. No explicit `@db.VarChar` limit to avoid accidental truncation if params change.
+- Typical length: ~97 chars. `@db.VarChar(255)` keeps headroom while adding a DB-level guardrail.
 
 ### Session token
 - `session_token_hash` stores a SHA-256 hash of the session token (not the raw token).
 - Raw token is only in the cookie; DB never stores plaintext session tokens.
 - Lookup: API hashes the incoming cookie token and queries by hash.
+- `user_agent` is capped at 1024 chars in both application code and the DB schema.
+
+### String limits
+- API validation already caps user-controlled text fields.
+- DB-level `@db.VarChar(...)` limits now mirror those caps for defense in depth:
+  - `food_name`: 500
+  - `notes`: 2000
+  - `quantity_unit`: 50
+  - `symptom_code`: 100
+  - `user_agent`: 1024
+  - `session_token_hash` / `ip_hash`: 64
 
 ### Quantity
 - `quantity_value` is `Decimal(10,2)` to avoid float precision issues.

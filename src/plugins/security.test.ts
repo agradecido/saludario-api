@@ -27,6 +27,9 @@ describe("security plugin", () => {
     });
 
     expect(response.statusCode).toBe(200);
+    expect(response.headers["content-security-policy"]).toBe(
+      "default-src 'none'; frame-ancestors 'none'; base-uri 'none'"
+    );
     expect(response.headers["x-content-type-options"]).toBe("nosniff");
     expect(response.headers["x-frame-options"]).toBe("DENY");
     expect(response.headers["referrer-policy"]).toBe("same-origin");

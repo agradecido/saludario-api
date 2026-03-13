@@ -31,6 +31,7 @@ function isCsrfProtectedRoute(request: {
 
 const securityPluginImpl: FastifyPluginAsync = async (fastify) => {
   fastify.addHook("onRequest", async (_request, reply) => {
+    reply.header("content-security-policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
     reply.header("x-content-type-options", "nosniff");
     reply.header("x-frame-options", "DENY");
     reply.header("referrer-policy", "same-origin");

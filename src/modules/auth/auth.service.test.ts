@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { SessionManager } from "../../plugins/session.js";
 import type { UsersRepository } from "../users/users.repository.js";
+import * as passwordModule from "./password.js";
 import { PASSWORD_MIN_LENGTH, hashPassword } from "./password.js";
 import { buildAuthService } from "./auth.service.js";
 
@@ -159,6 +160,31 @@ describe("auth service", () => {
       statusCode: 401,
       problemCode: "UNAUTHORIZED"
     });
+  });
+
+  it("burns password verification work when the email does not exist", async () => {
+    const usersRepository = createUsersRepository();
+    const sessionManager = createSessionManager();
+    const verifyPasswordSpy = vi.spyOn(passwordModule, "verifyPassword");
+
+    vi.mocked(usersRepository.findByEmail).mockResolvedValue(null);
+
+    const service = buildAuthService({
+      usersRepository,
+      sessionManager
+    });
+
+    await expect(
+      service.login({
+        email: "missing@example.com",
+        password: "wrong-password"
+      })
+    ).rejects.toMatchObject({
+      statusCode: 401,
+      problemCode: "UNAUTHORIZED"
+    });
+
+    expect(verifyPasswordSpy).toHaveBeenCalledTimes(1);
   });
 
   it("returns session introspection data for a valid session", async () => {

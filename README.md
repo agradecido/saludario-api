@@ -106,6 +106,7 @@ The API listens on `http://localhost:3000` by default.
 
 - Responses include request tracing via `x-request-id`.
 - API hardening details live in [docs/SECURITY_CHECKLIST.md](./docs/SECURITY_CHECKLIST.md).
+- In any deployed environment behind TLS termination, keep `NODE_ENV=production` so `Secure` cookies and HSTS remain enabled.
 
 ### Useful Commands
 

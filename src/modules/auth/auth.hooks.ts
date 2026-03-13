@@ -63,5 +63,5 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply):
     }
   );
 
-  reply.status(401).type("application/problem+json").send(problem);
+  return reply.status(401).type("application/problem+json").send(problem);
 }

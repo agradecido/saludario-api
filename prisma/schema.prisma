@@ -9,9 +9,9 @@ datasource db {
 
 model User {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  timezone     String    @default("UTC")
+  email        String    @unique @db.VarChar(320)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  timezone     String    @default("UTC") @db.VarChar(100)
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
@@ -25,8 +25,8 @@ model User {
 
 model MealCategory {
   id        Int    @id @default(autoincrement())
-  code      String @unique
-  label     String
+  code      String @unique @db.VarChar(32)
+  label     String @db.VarChar(50)
   sortOrder Int    @default(0) @map("sort_order")
 
   foodEntries FoodEntry[]
@@ -37,12 +37,12 @@ model MealCategory {
 model AuthSession {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId           String    @map("user_id") @db.Uuid
-  sessionTokenHash String    @map("session_token_hash")
+  sessionTokenHash String    @map("session_token_hash") @db.VarChar(64)
   expiresAt        DateTime  @map("expires_at") @db.Timestamptz
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
   revokedAt        DateTime? @map("revoked_at") @db.Timestamptz
-  ipHash           String?   @map("ip_hash")
-  userAgent        String?   @map("user_agent")
+  ipHash           String?   @map("ip_hash") @db.VarChar(64)
+  userAgent        String?   @map("user_agent") @db.VarChar(1024)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -55,10 +55,10 @@ model FoodEntry {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         String   @map("user_id") @db.Uuid
   mealCategoryId Int      @map("meal_category_id")
-  foodName       String   @map("food_name")
+  foodName       String   @map("food_name") @db.VarChar(500)
   quantityValue  Decimal? @map("quantity_value") @db.Decimal(10, 2)
-  quantityUnit   String?  @map("quantity_unit")
-  notes          String?
+  quantityUnit   String?  @map("quantity_unit") @db.VarChar(50)
+  notes          String?  @db.VarChar(2000)
   consumedAt     DateTime @map("consumed_at") @db.Timestamptz
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -74,10 +74,10 @@ model FoodEntry {
 model SymptomEvent {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId      String   @map("user_id") @db.Uuid
-  symptomCode String   @map("symptom_code")
+  symptomCode String   @map("symptom_code") @db.VarChar(100)
   severity    Int      @default(1)
   occurredAt  DateTime @map("occurred_at") @db.Timestamptz
-  notes       String?
+  notes       String?  @db.VarChar(2000)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
