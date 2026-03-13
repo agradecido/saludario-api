@@ -1,8 +1,6 @@
 # Saludario API
 
-Backend planning repository for Saludario, a web-based food diary focused on health tracking.
-
-This repository currently contains technical planning artifacts. Implementation has not started yet.
+Backend API for Saludario, a web-based food diary focused on health tracking.
 
 ## Documentation Rule
 
@@ -42,6 +40,78 @@ This repository currently contains technical planning artifacts. Implementation 
 - Schema & migration plan: [docs/SCHEMA_PLAN.md](./docs/SCHEMA_PLAN.md)
 - Delivery milestones: [docs/MILESTONES.md](./docs/MILESTONES.md)
 - Agent/operating rules: [AGENTS.md](./AGENTS.md)
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 22
+- npm
+- Docker and Docker Compose
+
+### Environment Setup
+
+1. Copy the example environment file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Replace `SESSION_SECRET` in `.env` with a real 64-character random string.
+
+### Start the Servers
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Start PostgreSQL:
+
+   ```bash
+   docker compose up -d db
+   ```
+
+3. Apply database migrations:
+
+   ```bash
+   npm run db:migrate
+   ```
+
+4. Seed the database (optional, but useful for local testing):
+
+   ```bash
+   npm run db:seed
+   ```
+
+5. Start the API in development mode:
+
+   ```bash
+   npm run dev
+   ```
+
+The API listens on `http://localhost:3000` by default.
+
+### Useful Commands
+
+- Health check:
+
+  ```bash
+  curl http://localhost:3000/api/v1/health
+  ```
+
+- Open Prisma Studio:
+
+  ```bash
+  npm run db:studio
+  ```
+
+- Stop PostgreSQL:
+
+  ```bash
+  docker compose stop db
+  ```
 
 ## MVP Definition of Done
 
