@@ -39,6 +39,19 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply):
     return;
   }
 
+  const sessionToken = request.auth.sessionToken ?? request.sessionToken ?? null;
+  if (sessionToken) {
+    const session = await request.server.sessionManager.validateSession(sessionToken);
+    if (session) {
+      setAuthenticatedAuthContext(request, {
+        sessionId: session.sessionId,
+        sessionToken,
+        userId: session.userId
+      });
+      return;
+    }
+  }
+
   const problem = createProblem(
     401,
     "UNAUTHORIZED",

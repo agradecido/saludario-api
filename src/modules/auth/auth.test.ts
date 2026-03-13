@@ -1,5 +1,5 @@
 import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   createAnonymousAuthContext,
@@ -82,6 +82,50 @@ describe("auth hooks", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ ok: true });
+  });
+
+  it("resolves a valid session token before rejecting the request", async () => {
+    app = Fastify();
+    app.decorate("sessionManager", {
+      createSession: vi.fn(),
+      validateSession: vi.fn(async () => ({
+        sessionId: "session-1",
+        userId: "user-1",
+        expiresAt: new Date("2026-03-20T00:00:00.000Z")
+      })),
+      revokeSession: vi.fn(),
+      setSessionCookie: vi.fn(),
+      clearSessionCookie: vi.fn()
+    });
+
+    app.get(
+      "/protected",
+      {
+        preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+          request.auth = createAnonymousAuthContext("token-123");
+          request.sessionToken = "token-123";
+          await requireAuth(request, reply);
+        }
+      },
+      async (request: FastifyRequest) => ({
+        auth: request.auth
+      })
+    );
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/protected"
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      auth: {
+        sessionId: "session-1",
+        sessionToken: "token-123",
+        userId: "user-1",
+        isAuthenticated: true
+      }
+    });
   });
 });
 

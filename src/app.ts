@@ -1,7 +1,8 @@
 import Fastify from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError, type ZodTypeAny } from "zod";
 
-import { createProblem } from "./common/errors.js";
+import { createProblem, ProblemError } from "./common/errors.js";
 import { createLogger } from "./common/logger.js";
 import { requestIdHook } from "./common/request-id.js";
 import { config } from "./config/index.js";
@@ -13,7 +14,7 @@ import { prismaPlugin } from "./plugins/prisma.js";
 import { rateLimitPlugin } from "./plugins/rate-limit.js";
 import { sessionPlugin } from "./plugins/session.js";
 
-function zodValidatorCompiler({ schema }: { schema: unknown }) {
+export function zodValidatorCompiler({ schema }: { schema: unknown }) {
   return (data: unknown) => {
     const parsed = (schema as ZodTypeAny).safeParse(data);
     if (parsed.success) {
@@ -24,30 +25,35 @@ function zodValidatorCompiler({ schema }: { schema: unknown }) {
   };
 }
 
-export async function createApp() {
-  const logger = createLogger(config.LOG_LEVEL);
+function isProblemError(error: unknown): error is ProblemError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    typeof (error as ProblemError).statusCode === "number" &&
+    typeof (error as ProblemError).problemCode === "string" &&
+    typeof (error as ProblemError).title === "string"
+  );
+}
 
-  const app = Fastify({
-    loggerInstance: logger
-  });
+export function setAppErrorHandler(app: FastifyInstance | { setErrorHandler: (...args: any[]) => unknown }): void {
+  app.setErrorHandler((error: unknown, request: FastifyRequest, reply: FastifyReply) => {
+    if (isProblemError(error)) {
+      const problem = createProblem(
+        error.statusCode,
+        error.problemCode,
+        error.title,
+        error.detail,
+        {
+          instance: request.url,
+          request_id: request.id,
+          ...error.extras
+        }
+      );
 
-  app.setValidatorCompiler(zodValidatorCompiler);
-  app.addHook("onRequest", requestIdHook);
+      reply.status(error.statusCode).type("application/problem+json").send(problem);
+      return;
+    }
 
-  await app.register(prismaPlugin);
-  await app.register(sessionPlugin);
-  await app.register(rateLimitPlugin);
-
-  app.get("/api/v1/health", async () => {
-    return { status: "ok" };
-  });
-
-  await app.register(authRoutes, { prefix: "/api/v1/auth" });
-  await app.register(entriesRoutes, { prefix: "/api/v1/entries" });
-  await app.register(categoriesRoutes, { prefix: "/api/v1/categories" });
-  await app.register(symptomsRoutes, { prefix: "/api/v1/internal/symptoms" });
-
-  app.setErrorHandler((error, request, reply) => {
     if (error instanceof ZodError) {
       const problem = createProblem(
         400,
@@ -72,12 +78,24 @@ export async function createApp() {
       typeof (error as { statusCode?: unknown }).statusCode === "number"
         ? ((error as { statusCode: number }).statusCode ?? 500)
         : 500;
-    const code = statusCode === 404 ? "NOT_FOUND" : "INTERNAL_ERROR";
-    const title = statusCode === 404 ? "Not found" : "Internal server error";
+    const code =
+      statusCode === 404
+        ? "NOT_FOUND"
+        : statusCode === 429
+          ? "RATE_LIMITED"
+          : "INTERNAL_ERROR";
+    const title =
+      statusCode === 404
+        ? "Not found"
+        : statusCode === 429
+          ? "Too Many Requests"
+          : "Internal server error";
     const detail =
       statusCode === 404
         ? "The requested resource was not found."
-        : "An unexpected error occurred.";
+        : statusCode === 429
+          ? ((error as { message?: string }).message ?? "Too many requests.")
+          : "An unexpected error occurred.";
 
     const problem = createProblem(statusCode, code, title, detail, {
       instance: request.url,
@@ -86,6 +104,31 @@ export async function createApp() {
 
     reply.status(statusCode).type("application/problem+json").send(problem);
   });
+}
+
+export async function createApp() {
+  const logger = createLogger(config.LOG_LEVEL);
+
+  const app = Fastify({
+    loggerInstance: logger
+  });
+
+  app.setValidatorCompiler(zodValidatorCompiler);
+  app.addHook("onRequest", requestIdHook);
+
+  await app.register(prismaPlugin);
+  await app.register(sessionPlugin);
+  await app.register(rateLimitPlugin);
+  setAppErrorHandler(app);
+
+  app.get("/api/v1/health", async () => {
+    return { status: "ok" };
+  });
+
+  await app.register(authRoutes, { prefix: "/api/v1/auth" });
+  await app.register(entriesRoutes, { prefix: "/api/v1/entries" });
+  await app.register(categoriesRoutes, { prefix: "/api/v1/categories" });
+  await app.register(symptomsRoutes, { prefix: "/api/v1/internal/symptoms" });
 
   return app;
 }

@@ -18,6 +18,30 @@ export interface ProblemDetails {
   [key: string]: unknown;
 }
 
+export class ProblemError extends Error {
+  readonly statusCode: number;
+  readonly problemCode: ProblemCode;
+  readonly title: string;
+  readonly detail?: string;
+  readonly extras: Record<string, unknown>;
+
+  constructor(
+    statusCode: number,
+    problemCode: ProblemCode,
+    title: string,
+    detail?: string,
+    extras: Record<string, unknown> = {}
+  ) {
+    super(detail ?? title);
+    this.name = "ProblemError";
+    this.statusCode = statusCode;
+    this.problemCode = problemCode;
+    this.title = title;
+    this.detail = detail;
+    this.extras = extras;
+  }
+}
+
 function toProblemType(code: ProblemCode): string {
   return `https://api.saludario.local/problems/${code.toLowerCase()}`;
 }
@@ -37,4 +61,14 @@ export function createProblem(
     code,
     ...extras
   };
+}
+
+export function createProblemError(
+  statusCode: number,
+  problemCode: ProblemCode,
+  title: string,
+  detail?: string,
+  extras: Record<string, unknown> = {}
+): ProblemError {
+  return new ProblemError(statusCode, problemCode, title, detail, extras);
 }

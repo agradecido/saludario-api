@@ -8,7 +8,19 @@ const rateLimitPluginImpl: FastifyPluginAsync = async (fastify) => {
   await fastify.register(rateLimit, {
     global: true,
     max: config.RATE_LIMIT_MAX,
-    timeWindow: config.RATE_LIMIT_WINDOW_MS
+    timeWindow: config.RATE_LIMIT_WINDOW_MS,
+    errorResponseBuilder(request, context) {
+      return {
+        statusCode: context.statusCode,
+        problemCode: "RATE_LIMITED",
+        title: "Too Many Requests",
+        detail: `Rate limit exceeded, retry in ${context.after}`,
+        extras: {
+          instance: request.url,
+          request_id: request.id
+        }
+      };
+    }
   });
 };
 

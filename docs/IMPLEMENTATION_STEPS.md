@@ -91,8 +91,10 @@ Objetivo: registro, login, logout, introspección de sesión, y hook `requireAut
 
 **Current progress**
 - [x] Auth request context base in `request.auth`
-- [x] `requireAuth` baseline returning RFC 7807 `401`
+- [x] `requireAuth` resolves valid sessions and returns RFC 7807 `401` otherwise
 - [x] Password hashing and verification helpers with Argon2id
+- [x] Session persistence, auth service, and auth routes implemented
+- [x] Unit and integration auth coverage implemented
 
 **Steps**
 
@@ -105,31 +107,31 @@ Objetivo: registro, login, logout, introspección de sesión, y hook `requireAut
    - `verifyPassword(hash, password)`
    - `PASSWORD_MIN_LENGTH = 8`
 
-3. **Session plugin completo** (`src/plugins/session.ts`) — actualizar baseline actual
+3. **Session plugin completo** (`src/plugins/session.ts`) — implemented
    - Implementar lógica de cookie session: generar token crypto random (32 bytes hex), hashear con SHA-256, almacenar hash en `auth_sessions`
    - Cookie flags: `HttpOnly`, `Secure` (en prod), `SameSite=Lax`, `Path=/`, `Max-Age` de config
    - Funciones: `createSession(userId, req)`, `validateSession(token)`, `revokeSession(token)`
 
-4. **Auth schemas** (`src/modules/auth/auth.schemas.ts`) — *parallel with step 3*
+4. **Auth schemas** (`src/modules/auth/auth.schemas.ts`) — implemented
    - Zod: `registerBodySchema` (email, password, timezone?), `loginBodySchema` (email, password)
    - Password policy: mínimo 8 chars (configurable)
    - Email normalización: lowercase + trim
 
-5. **Users repository** (`src/modules/users/users.repository.ts`) — *parallel with step 4*
+5. **Users repository** (`src/modules/users/users.repository.ts`) — implemented
    - `findByEmail(email)`, `create({ email, passwordHash, timezone })`, `findById(id)`
 
-6. **Auth service** (`src/modules/auth/auth.service.ts`) — *depends on steps 3, 4, 5*
+6. **Auth service** (`src/modules/auth/auth.service.ts`) — implemented
    - `register(body, req)`: validar unicidad email → hash password (Argon2id) → crear user → crear session → devolver user + set cookie
    - `login(body, req)`: buscar user por email → verify Argon2id → crear session → set cookie
    - `logout(token)`: revocar session (set `revoked_at`) → clear cookie
    - `getSession(token)`: validar session (no expirada, no revocada) → devolver user summary
 
-7. **Auth hook resolution** (`src/modules/auth/auth.hooks.ts`) — *depends on step 6*
+7. **Auth hook resolution** (`src/modules/auth/auth.hooks.ts`) — implemented
    - Completar el baseline para que `requireAuth` use `request.auth`
    - Resolver sesión válida y poblar `request.auth.userId`, `request.auth.sessionId`, `request.auth.isAuthenticated = true`
    - Si inválida → 401 RFC 7807
 
-8. **Auth routes** (`src/modules/auth/auth.routes.ts`) — *depends on steps 6, 7*
+8. **Auth routes** (`src/modules/auth/auth.routes.ts`) — implemented
    - `POST /api/v1/auth/register` → auth.service.register
    - `POST /api/v1/auth/login` → auth.service.login
    - `POST /api/v1/auth/logout` (session-aware, idempotent) → auth.service.logout
@@ -140,13 +142,13 @@ Objetivo: registro, login, logout, introspección de sesión, y hook `requireAut
    - Constantes: session TTL, cookie name
    - La política de password mínima ya vive en `src/modules/auth/password.ts`
 
-10. **Auth unit tests** (`src/modules/auth/auth.test.ts`) — *depends on step 6*
+10. **Auth unit tests** (`src/modules/auth/auth.test.ts`, `src/modules/auth/auth.service.test.ts`) — implemented
    - Test register con email duplicado → 409
    - Test login con credenciales incorrectas → 401
    - Test password hashing y verificación
    - Test session token hash no almacena plaintext
 
-11. **Auth integration tests** (`tests/integration/auth.integration.test.ts`) — *depends on step 8*
+11. **Auth integration tests** (`tests/integration/auth.integration.test.ts`) — implemented
    - Flujo completo: register → session introspect → logout → session devuelve 401
    - Login → cookie presente → session válida
    - Registro duplicado → 409
@@ -162,17 +164,15 @@ Objetivo: registro, login, logout, introspección de sesión, y hook `requireAut
 - `src/modules/users/users.repository.ts` — queries Prisma para users
 - `src/config/session.ts` — política de sesión
 - `tests/integration/auth.integration.test.ts` — tests E2E de auth
-- `tests/integration/helpers/setup.ts` — test DB factory
+- `tests/integration/helpers/create-auth-test-app.ts` — auth test app con Prisma fake stateful
 
 **Verification**
-- Integration tests pasan: register → login → session → logout cycle
-- `curl` manual: register devuelve 201 + Set-Cookie; login devuelve 200 + Set-Cookie; logout devuelve 204
-- Registro duplicado devuelve 409 con RFC 7807 body
-- Login con credenciales malas devuelve 401
-- Endpoint protegido sin cookie devuelve 401
-- Session cookie tiene flags HttpOnly + SameSite=Lax
-- DB: `auth_sessions.session_token_hash` no contiene el token raw
-- DB: `users.password_hash` es string Argon2id (empieza por `$argon2id$`)
+- `npm run typecheck` y `npm test` pasan
+- Integration tests pasan: register → session → logout → session `401`; login → session válida; duplicate register `409`; login rate-limit `429`
+- Endpoint protegido sin cookie devuelve `401` RFC 7807
+- Session cookie tiene flags `HttpOnly` + `SameSite=Lax`
+- Session persistence almacena `session_token_hash` y no el token raw
+- `users.password_hash` es string Argon2id (empieza por `$argon2id$`)
 
 ---
 
