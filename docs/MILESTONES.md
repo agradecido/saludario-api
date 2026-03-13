@@ -34,9 +34,9 @@ Objectives:
 
 Checklist:
 - [x] Auth endpoint contract documented (`docs/API_CONTRACT.md`, March 8, 2026)
-- [ ] Password hashing and session policy documented (email/password only, no email verification in v1)
+- [x] Password hashing and session policy documented (`src/modules/auth/password.ts`, `src/config/session.ts`, `docs/IMPLEMENTATION_STEPS.md`, March 13, 2026)
 - [ ] Ownership rules documented for protected routes
-- [ ] Critical auth test scenarios defined
+- [x] Critical auth test scenarios defined (`docs/IMPLEMENTATION_STEPS.md`, March 13, 2026)
 
 Exit criteria:
 - Auth design is complete, testable, and ownership-safe by design
@@ -65,7 +65,7 @@ Objectives:
 Checklist:
 - [x] `symptom_events` data contract documented (`docs/API_CONTRACT.md`, March 8, 2026)
 - [x] Internal symptom API boundaries documented (`docs/API_CONTRACT.md`, March 8, 2026)
-- [ ] Indexing and future extensibility review completed
+- [x] Indexing and future extensibility review completed (`docs/SCHEMA_PLAN.md`, March 13, 2026)
 
 Exit criteria:
 - Symptom readiness is preserved without expanding MVP scope
