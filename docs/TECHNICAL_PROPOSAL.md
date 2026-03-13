@@ -25,7 +25,7 @@
 - Infrastructure: **Local-first development setup** for now (no cloud deployment in MVP phase).
 - Deployment: **Local Docker Compose** (API + PostgreSQL) as the primary runtime target until cloud approval.
 - Observability/logging: **Pino structured logs** in local runtime; centralized sink and **Sentry** when hosted environments are introduced.
-- Testing: **Vitest/Jest** (unit), **Supertest** (API integration), **Playwright** (critical e2e paths).
+- Testing: **Vitest** (unit), **Supertest** (API integration), **Playwright** (critical e2e paths).
 
 # 3. Stack Tradeoffs and Alternatives
 - Prisma vs Drizzle:
@@ -81,9 +81,9 @@
 
 **Constraints/indexing**
 - Unique index on `users.email`.
-- Index `food_entries(user_id, consumed_at desc)`.
-- Index `food_entries(user_id, meal_category_id, consumed_at desc)`.
-- Future index `symptom_events(user_id, occurred_at desc)`.
+- Index `food_entries(user_id, consumed_at desc, id desc)`.
+- Index `food_entries(user_id, meal_category_id, consumed_at desc, id desc)`.
+- Future index `symptom_events(user_id, occurred_at desc, id desc)`.
 - Enforce ownership via `user_id` on all personal records.
 
 **Auditability**
@@ -167,3 +167,4 @@
 8. Approved (March 8, 2026): Use Prisma as ORM/migrations baseline.
 9. Approved (March 8, 2026): Use RFC 7807 Problem Details with `code` and `request_id` API extensions.
 10. Approved (March 8, 2026): Use cursor-based pagination for food-entry listing with `(consumed_at, id)` ordering.
+11. Approved (March 13, 2026): Use Vitest as the unit test framework baseline.

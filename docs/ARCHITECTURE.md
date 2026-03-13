@@ -173,9 +173,9 @@ volumes:
 - **Single Prisma schema file**: avoids multi-schema complexity. Review if the schema grows past ~15 models.
 - **No barrel `index.ts` files**: each import is explicit to avoid circular dependency risks and improve tree-shaking.
 - **Co-located unit tests**: faster feedback loop during development; integration tests stay separated for different lifecycle.
+- **Testing framework**: Vitest for unit tests, with Supertest for integration and Playwright for e2e.
 
 ## 8. Open for Review
 
 - Confirm UUID version preference (v4 default via `gen_random_uuid()` vs v7 with extension for sort-friendliness).
-- Confirm Vitest vs Jest (Vitest recommended for speed with TypeScript/ESM).
 - Confirm whether `symptoms` module routes should be behind a feature flag or just under `/internal/` prefix as specified in API contract.

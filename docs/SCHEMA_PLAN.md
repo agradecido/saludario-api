@@ -17,13 +17,10 @@ DB: PostgreSQL 16+
 
 | # | Migration name | Tables | Notes |
 |---|---------------|--------|-------|
-| 1 | `create_users` | `users` | Foundation table; other tables FK to it |
-| 2 | `create_meal_categories` | `meal_categories` | Seeded with 4 fixed categories |
-| 3 | `create_auth_sessions` | `auth_sessions` | Depends on `users` |
-| 4 | `create_food_entries` | `food_entries` | Depends on `users` + `meal_categories` |
-| 5 | `create_symptom_events` | `symptom_events` | Depends on `users`; future-readiness |
+| 1 | `init_foundation` | `users`, `meal_categories`, `auth_sessions`, `food_entries`, `symptom_events` | Preferred MVP baseline migration for a fresh schema |
 
-**Rationale for separate migrations**: allows easier rollback of individual tables during development. In practice, Prisma may batch these into fewer migrations depending on timing — this is acceptable for a fresh schema.
+Optional during active design:
+- Split future deltas into focused migrations (for example: `add_auth_indexes`, `add_symptom_fields`) when changes are introduced after initial baseline approval.
 
 ## 2. Prisma Schema
 
@@ -104,8 +101,8 @@ model FoodEntry {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   mealCategory MealCategory @relation(fields: [mealCategoryId], references: [id])
 
-  @@index([userId, consumedAt(sort: Desc)], map: "idx_entries_user_consumed")
-  @@index([userId, mealCategoryId, consumedAt(sort: Desc)], map: "idx_entries_user_cat_consumed")
+  @@index([userId, consumedAt(sort: Desc), id(sort: Desc)], map: "idx_entries_user_consumed_id")
+  @@index([userId, mealCategoryId, consumedAt(sort: Desc), id(sort: Desc)], map: "idx_entries_user_cat_consumed_id")
   @@map("food_entries")
 }
 
@@ -123,7 +120,7 @@ model SymptomEvent {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, occurredAt(sort: Desc)], map: "idx_symptoms_user_occurred")
+  @@index([userId, occurredAt(sort: Desc), id(sort: Desc)], map: "idx_symptoms_user_occurred_id")
   @@map("symptom_events")
 }
 ```
@@ -171,9 +168,9 @@ Seed is idempotent (upsert by `code`).
 - Future: Consider a controlled vocabulary or enum for units if UX benefits warrant it.
 
 ### Indexes
-- **`idx_entries_user_consumed`**: Supports the primary list query (user's entries sorted by `consumed_at DESC`) and cursor pagination.
-- **`idx_entries_user_cat_consumed`**: Supports filtered queries by meal category.
-- **`idx_symptoms_user_occurred`**: Supports future symptom listing with same pagination pattern.
+- **`idx_entries_user_consumed_id`**: Supports primary list query and deterministic cursor pagination on `(consumed_at DESC, id DESC)`.
+- **`idx_entries_user_cat_consumed_id`**: Supports filtered list queries by meal category with same cursor semantics.
+- **`idx_symptoms_user_occurred_id`**: Supports symptom list pagination on `(occurred_at DESC, id DESC)`.
 - **`auth_sessions(userId)`**: Supports session lookup by user for cleanup/revocation.
 - **`auth_sessions(expiresAt)`**: Supports periodic expired session cleanup job.
 
@@ -188,7 +185,7 @@ Seed is idempotent (upsert by `code`).
 docker compose up -d db
 
 # 2. Generate initial migration
-npx prisma migrate dev --name init
+npx prisma migrate dev --name init_foundation
 
 # 3. Seed meal categories
 npx prisma db seed

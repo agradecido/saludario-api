@@ -68,9 +68,11 @@ Common app error codes:
 - `RATE_LIMITED` (`429`)
 - `INTERNAL_ERROR` (`500`)
 
-## 3. Pagination Contract (Entries list)
+## 3. Pagination Contract
 
-Entries list endpoints use cursor pagination:
+### 3.1 Entries list pagination
+
+Entries endpoints use cursor pagination:
 - Sort order: `(consumed_at DESC, id DESC)`
 - Query params:
   - `limit` (optional, default `20`, max `100`)
@@ -91,6 +93,17 @@ Page response shape:
   }
 }
 ```
+
+### 3.2 Symptom events list pagination
+
+Symptom endpoints use cursor pagination:
+- Sort order: `(occurred_at DESC, id DESC)`
+- Query params:
+  - `limit` (optional, default `20`, max `100`)
+  - `cursor` (optional opaque string)
+
+Cursor payload semantics (opaque to clients):
+- Encodes the last seen pair: `occurred_at` and `id`
 
 ## 4. Auth Endpoints
 
@@ -158,11 +171,11 @@ Page response shape:
 
 ### 4.3 Logout
 - Method/Path: `POST /api/v1/auth/logout`
-- Auth: Protected
+- Auth: Session-aware (valid session optional)
 - Request body: empty
 - Responses:
-  - `204 No Content`: session revoked and cookie cleared
-  - Idempotent behavior: calling with invalid/expired session may still return `204`
+  - `204 No Content`: cookie cleared; if session exists, it is revoked
+  - Idempotent behavior: calling with invalid/expired/missing session still returns `204`
 
 ### 4.4 Session Introspection
 - Method/Path: `GET /api/v1/auth/session`
@@ -354,7 +367,10 @@ Namespace:
   - `from` (optional ISO datetime, inclusive)
   - `to` (optional ISO datetime, inclusive)
   - `symptom_code` (optional string)
-  - `limit` and `cursor` (same semantics as entries pagination)
+  - `limit` (optional integer, default `20`, max `100`)
+  - `cursor` (optional opaque cursor encoding `occurred_at` and `id`)
+- Sort order:
+  - `(occurred_at DESC, id DESC)`
 - Responses:
   - `200 OK`
   - `400 Bad Request`
@@ -377,4 +393,3 @@ An endpoint contract is considered done when it explicitly defines:
 - Error codes using RFC 7807 format
 - Validation boundaries
 - For list endpoints: sorting and pagination semantics
-

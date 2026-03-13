@@ -28,6 +28,7 @@ This repository currently contains technical planning artifacts. Implementation 
 - Edit history: Deferred (MVP uses last-write-wins updates)
 - API error format: RFC 7807 Problem Details (`application/problem+json`) with `code` and `request_id` extensions
 - Pagination strategy (food-entry listing): Cursor-based using `(consumed_at, id)` descending order
+- Testing baseline: Vitest (unit), Supertest (API integration), Playwright (critical e2e paths)
 - Infrastructure: Local-only for now
 - Future cloud direction: Single-region EU
 - Future symptom support: Include schema + internal API in MVP boundary
