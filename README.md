@@ -95,6 +95,12 @@ The API listens on `http://localhost:3000` by default.
 
 ### Useful Commands
 
+- Run the local validation gate:
+
+  ```bash
+  npm run check
+  ```
+
 - Health check:
 
   ```bash
@@ -111,6 +117,15 @@ The API listens on `http://localhost:3000` by default.
 
   ```bash
   docker compose stop db
+  ```
+
+### Git Hooks
+
+- This repo uses a local pre-commit hook to run `npm run check` before each commit.
+- Enable it for your clone with:
+
+  ```bash
+  git config core.hooksPath .githooks
   ```
 
 ## MVP Definition of Done
