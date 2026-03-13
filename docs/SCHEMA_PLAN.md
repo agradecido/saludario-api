@@ -1,0 +1,206 @@
+# Saludario — Initial Schema & Migration Plan
+
+Status: Pending approval  
+Date: March 13, 2026  
+ORM: Prisma (approved March 8, 2026)  
+DB: PostgreSQL 16+
+
+## 1. Migration Strategy
+
+### Approach
+- Use **Prisma Migrate** for all schema changes.
+- Migrations are committed to the repo under `prisma/migrations/`.
+- Each migration is a single, focused change with a descriptive name.
+- Local development uses `prisma migrate dev`; future CI/production will use `prisma migrate deploy`.
+
+### Initial migration plan (ordered)
+
+| # | Migration name | Tables | Notes |
+|---|---------------|--------|-------|
+| 1 | `create_users` | `users` | Foundation table; other tables FK to it |
+| 2 | `create_meal_categories` | `meal_categories` | Seeded with 4 fixed categories |
+| 3 | `create_auth_sessions` | `auth_sessions` | Depends on `users` |
+| 4 | `create_food_entries` | `food_entries` | Depends on `users` + `meal_categories` |
+| 5 | `create_symptom_events` | `symptom_events` | Depends on `users`; future-readiness |
+
+**Rationale for separate migrations**: allows easier rollback of individual tables during development. In practice, Prisma may batch these into fewer migrations depending on timing — this is acceptable for a fresh schema.
+
+## 2. Prisma Schema
+
+```prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS ───────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  timezone     String    @default("UTC")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  sessions      AuthSession[]
+  foodEntries   FoodEntry[]
+  symptomEvents SymptomEvent[]
+
+  @@map("users")
+}
+
+// ─── MEAL CATEGORIES ────────────────────────────────────
+
+model MealCategory {
+  id        Int    @id @default(autoincrement())
+  code      String @unique                          // breakfast | lunch | dinner | snack
+  label     String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  foodEntries FoodEntry[]
+
+  @@map("meal_categories")
+}
+
+// ─── AUTH SESSIONS ──────────────────────────────────────
+
+model AuthSession {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  sessionTokenHash String    @map("session_token_hash")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz
+  ipHash           String?   @map("ip_hash")
+  userAgent        String?   @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+// ─── FOOD ENTRIES ───────────────────────────────────────
+
+model FoodEntry {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  mealCategoryId Int      @map("meal_category_id")
+  foodName       String   @map("food_name")
+  quantityValue  Decimal? @map("quantity_value") @db.Decimal(10, 2)
+  quantityUnit   String?  @map("quantity_unit")
+  notes          String?
+  consumedAt     DateTime @map("consumed_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealCategory MealCategory @relation(fields: [mealCategoryId], references: [id])
+
+  @@index([userId, consumedAt(sort: Desc)], map: "idx_entries_user_consumed")
+  @@index([userId, mealCategoryId, consumedAt(sort: Desc)], map: "idx_entries_user_cat_consumed")
+  @@map("food_entries")
+}
+
+// ─── SYMPTOM EVENTS (future-ready) ─────────────────────
+
+model SymptomEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  symptomCode String   @map("symptom_code")
+  severity    Int      @default(1)                    // 1-5 scale
+  occurredAt  DateTime @map("occurred_at") @db.Timestamptz
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt(sort: Desc)], map: "idx_symptoms_user_occurred")
+  @@map("symptom_events")
+}
+```
+
+## 3. Seed Data
+
+`meal_categories` is seeded on first migration. The seed script (`scripts/seed.ts`) will insert:
+
+| id | code | label | sort_order |
+|----|------|-------|------------|
+| 1 | `breakfast` | Breakfast | 1 |
+| 2 | `lunch` | Lunch | 2 |
+| 3 | `dinner` | Dinner | 3 |
+| 4 | `snack` | Snack | 4 |
+
+Seed is idempotent (upsert by `code`).
+
+## 4. Design Decisions & Rationale
+
+### IDs
+- `users`, `auth_sessions`, `food_entries`, `symptom_events`: UUID (generated by PostgreSQL `gen_random_uuid()`).
+- `meal_categories`: autoincrement integer (small fixed set, simpler FK joins).
+- **Open question**: Switch UUIDs to UUID v7 for time-sortability? Requires a custom PG extension (`pg_uuidv7`) or application-side generation. Recommended but not blocking.
+
+### Soft delete
+- Only `users.deleted_at` supports soft delete (account deactivation without data loss).
+- `food_entries` and `symptom_events` use hard delete in MVP. Soft delete can be added later if audit requirements emerge.
+
+### Timestamps
+- All timestamps are `timestamptz` to avoid timezone ambiguity.
+- `updated_at` uses Prisma's `@updatedAt` (application-level, not DB trigger). Acceptable for MVP since there's a single writer (the API).
+
+### Password storage
+- `password_hash` stores the full Argon2id output string (includes salt, params, and hash).
+- Typical length: ~97 chars. No explicit `@db.VarChar` limit to avoid accidental truncation if params change.
+
+### Session token
+- `session_token_hash` stores a SHA-256 hash of the session token (not the raw token).
+- Raw token is only in the cookie; DB never stores plaintext session tokens.
+- Lookup: API hashes the incoming cookie token and queries by hash.
+
+### Quantity
+- `quantity_value` is `Decimal(10,2)` to avoid float precision issues.
+- `quantity_unit` is freeform string in MVP (no enum constraint). Users might enter "g", "ml", "cups", "pieces", etc.
+- Future: Consider a controlled vocabulary or enum for units if UX benefits warrant it.
+
+### Indexes
+- **`idx_entries_user_consumed`**: Supports the primary list query (user's entries sorted by `consumed_at DESC`) and cursor pagination.
+- **`idx_entries_user_cat_consumed`**: Supports filtered queries by meal category.
+- **`idx_symptoms_user_occurred`**: Supports future symptom listing with same pagination pattern.
+- **`auth_sessions(userId)`**: Supports session lookup by user for cleanup/revocation.
+- **`auth_sessions(expiresAt)`**: Supports periodic expired session cleanup job.
+
+### Future extensibility
+- `entry_symptom_links` table (described in Technical Proposal) is **not** created in the initial migration. It will be added when correlation features are designed, to avoid premature schema commitments.
+- `symptom_events` is created now to match the internal API surface defined in the API contract.
+
+## 5. Migration Execution Plan (Local Dev)
+
+```bash
+# 1. Start local PostgreSQL
+docker compose up -d db
+
+# 2. Generate initial migration
+npx prisma migrate dev --name init
+
+# 3. Seed meal categories
+npx prisma db seed
+
+# 4. Verify
+npx prisma studio
+```
+
+## 6. Checklist Before Approval
+
+- [ ] Confirm UUID version preference (v4 default vs v7 with extension)
+- [ ] Confirm `quantity_unit` stays freeform (no enum) in MVP
+- [ ] Confirm single Prisma schema file (vs multi-file if Prisma adds support)
+- [ ] Confirm `entry_symptom_links` is deferred (not in initial migration)
+- [ ] Review index choices for expected query patterns

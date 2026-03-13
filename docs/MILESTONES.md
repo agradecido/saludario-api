@@ -19,8 +19,8 @@ Checklist:
 - [x] ORM decision closed: Prisma selected (March 8, 2026)
 - [x] API error format defined: RFC 7807 Problem Details (`application/problem+json`) with `code` and `request_id`
 - [x] Pagination strategy defined for entry listing: cursor `(consumed_at, id)` descending
-- [ ] Architecture skeleton and folder conventions approved
-- [ ] Initial schema/migration plan drafted (`users`, `meal_categories`, `food_entries`, `auth_sessions`, `symptom_events`)
+- [x] Architecture skeleton and folder conventions drafted (`docs/ARCHITECTURE.md`, March 13, 2026)
+- [x] Initial schema/migration plan drafted (`docs/SCHEMA_PLAN.md`, March 13, 2026)
 - [x] Endpoint definition-of-done documented (`docs/API_CONTRACT.md`, March 8, 2026)
 
 Exit criteria:
