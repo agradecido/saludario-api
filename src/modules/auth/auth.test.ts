@@ -7,6 +7,11 @@ import {
   setAuthenticatedAuthContext
 } from "./auth.hooks.js";
 import {
+  loginBodySchema,
+  normalizeEmail,
+  registerBodySchema
+} from "./auth.schemas.js";
+import {
   PASSWORD_MIN_LENGTH,
   hashPassword,
   isPasswordLongEnough,
@@ -97,5 +102,52 @@ describe("password helpers", () => {
     expect(hash.startsWith("$argon2id$")).toBe(true);
     await expect(verifyPassword(hash, password)).resolves.toBe(true);
     await expect(verifyPassword(hash, `${password}!`)).resolves.toBe(false);
+  });
+});
+
+describe("auth schemas", () => {
+  it("normalizes register emails and applies the default timezone", () => {
+    const result = registerBodySchema.parse({
+      email: "  USER@Example.COM ",
+      password: "x".repeat(PASSWORD_MIN_LENGTH)
+    });
+
+    expect(result).toEqual({
+      email: "user@example.com",
+      password: "x".repeat(PASSWORD_MIN_LENGTH),
+      timezone: "UTC"
+    });
+  });
+
+  it("normalizes login emails", () => {
+    const result = loginBodySchema.parse({
+      email: "  USER@Example.COM ",
+      password: "secret-pass"
+    });
+
+    expect(result.email).toBe("user@example.com");
+  });
+
+  it("rejects register passwords shorter than the minimum", () => {
+    const result = registerBodySchema.safeParse({
+      email: "user@example.com",
+      password: "x".repeat(PASSWORD_MIN_LENGTH - 1)
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects unknown fields in auth payloads", () => {
+    const result = loginBodySchema.safeParse({
+      email: "user@example.com",
+      password: "secret-pass",
+      extra: true
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("exports a reusable email normalizer", () => {
+    expect(normalizeEmail("  USER@Example.COM ")).toBe("user@example.com");
   });
 });
