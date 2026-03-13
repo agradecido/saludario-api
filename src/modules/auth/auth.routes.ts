@@ -67,11 +67,17 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  fastify.post("/logout", async (request, reply) => {
-    await authService.logout(request.sessionToken ?? null);
-    fastify.sessionManager.clearSessionCookie(reply);
-    reply.status(204).send();
-  });
+  fastify.post(
+    "/logout",
+    {
+      preHandler: requireAuth
+    },
+    async (request, reply) => {
+      await authService.logout(request.sessionToken ?? null);
+      fastify.sessionManager.clearSessionCookie(reply);
+      reply.status(204).send();
+    }
+  );
 
   fastify.get(
     "/session",

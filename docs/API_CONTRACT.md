@@ -171,11 +171,11 @@ Cursor payload semantics (opaque to clients):
 
 ### 4.3 Logout
 - Method/Path: `POST /api/v1/auth/logout`
-- Auth: Session-aware (valid session optional)
+- Auth: Protected
 - Request body: empty
 - Responses:
-  - `204 No Content`: cookie cleared; if session exists, it is revoked
-  - Idempotent behavior: calling with invalid/expired/missing session still returns `204`
+  - `204 No Content`: cookie cleared; current session revoked
+  - `401 Unauthorized`: no active session
 
 ### 4.4 Session Introspection
 - Method/Path: `GET /api/v1/auth/session`

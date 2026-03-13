@@ -134,7 +134,7 @@ Objetivo: registro, login, logout, introspección de sesión, y hook `requireAut
 8. **Auth routes** (`src/modules/auth/auth.routes.ts`) — implemented
    - `POST /api/v1/auth/register` → auth.service.register
    - `POST /api/v1/auth/login` → auth.service.login
-   - `POST /api/v1/auth/logout` (session-aware, idempotent) → auth.service.logout
+   - `POST /api/v1/auth/logout` (protected) → auth.service.logout
    - `GET /api/v1/auth/session` (protected) → auth.service.getSession
    - Rate-limit reforzado en login: max 5 intentos/minuto por IP
 

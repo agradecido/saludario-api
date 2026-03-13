@@ -137,10 +137,18 @@
         "tags": ["Auth"],
         "summary": "Logout user",
         "operationId": "logoutUser",
-        "description": "Session-aware endpoint. Clears the cookie and revokes the session if present.",
+        "description": "Protected endpoint. Clears the cookie and revokes the active session.",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
         "responses": {
           "204": {
-            "description": "Cookie cleared; if session exists, it is revoked"
+            "description": "Cookie cleared and session revoked"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
           }
         }
       }

@@ -12,7 +12,7 @@ Status: implemented baseline for local MVP hardening
 - [x] State-changing requests require `X-Requested-With: XMLHttpRequest`
 - [x] Security headers enabled: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
 - [x] RFC 7807 problem responses used for auth, validation, rate limiting, and authorization failures
-- [x] Request tracing uses `x-request-id`
+- [x] Request tracing uses `x-request-id`, with incoming ids sanitized before reuse
 - [x] 5xx responses are logged server-side without exposing stack traces to clients
 
 ## Operational controls

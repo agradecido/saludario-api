@@ -230,7 +230,7 @@ describe("auth routes", () => {
     });
   });
 
-  it("keeps logout idempotent when no session is present", async () => {
+  it("requires an authenticated session for logout", async () => {
     const authTestApp = await createAuthTestApp();
     app = authTestApp.app;
 
@@ -240,7 +240,11 @@ describe("auth routes", () => {
       headers: STATE_CHANGING_HEADERS
     });
 
-    expect(response.statusCode).toBe(204);
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({
+      code: "UNAUTHORIZED",
+      status: 401
+    });
   });
 
   it("rejects state-changing requests without the csrf header", async () => {
