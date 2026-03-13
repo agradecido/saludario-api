@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify from "fastify";
 import { ZodError, type ZodTypeAny } from "zod";
 
 import { createProblem } from "./common/errors.js";
@@ -24,9 +24,11 @@ function zodValidatorCompiler({ schema }: { schema: unknown }) {
   };
 }
 
-export async function createApp(): Promise<FastifyInstance> {
+export async function createApp() {
+  const logger = createLogger(config.LOG_LEVEL);
+
   const app = Fastify({
-    logger: createLogger(config.LOG_LEVEL)
+    loggerInstance: logger
   });
 
   app.setValidatorCompiler(zodValidatorCompiler);
@@ -35,6 +37,10 @@ export async function createApp(): Promise<FastifyInstance> {
   await app.register(prismaPlugin);
   await app.register(sessionPlugin);
   await app.register(rateLimitPlugin);
+
+  app.get("/api/v1/health", async () => {
+    return { status: "ok" };
+  });
 
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
   await app.register(entriesRoutes, { prefix: "/api/v1/entries" });
