@@ -19,7 +19,9 @@
     "format:write": "prettier --write .",
     "db:migrate": "prisma migrate dev --name init",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:cleanup-sessions": "tsx scripts/cleanup-sessions.ts",
+    "db:backup-local": "./scripts/backup-local.sh"
   },
   "repository": {
     "type": "git",

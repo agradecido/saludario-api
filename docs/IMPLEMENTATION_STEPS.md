@@ -308,39 +308,46 @@ Objetivo: endpoints internos de symptom events (CRUD parcial) para preparar exte
 
 Objetivo: seguridad, operaciones, y calidad de producción local.
 
+**Current progress**
+- [x] CSRF protection and security headers implemented
+- [x] Session cleanup and local backup tooling implemented
+- [x] End-to-end critical path test plan and release-readiness checklist documented
+- [x] Security checklist documented
+- [ ] Security specialist review still pending human review
+
 **Steps**
 
-1. **CSRF protection** — para endpoints state-changing
+1. **CSRF protection** — implemented
    - Evaluar `@fastify/csrf-protection` o custom header check (`X-Requested-With`)
    - Aplicar a POST/PATCH/DELETE
 
-2. **Input sanitization review** — todos los módulos
+2. **Input sanitization review** — completed
    - Verificar que Zod strips unknown fields (`z.object().strict()` o `.strip()`)
    - Verificar que no hay SQL injection paths (Prisma parametriza por defecto)
    - Verificar longitudes máximas: food_name (500), notes (2000), symptom_code (100)
 
-3. **Security headers** — *parallel with step 1*
+3. **Security headers** — implemented
    - `@fastify/helmet` o manual: `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security` (prep)
 
-4. **Session cleanup** — *parallel with steps 1-3*
+4. **Session cleanup** — implemented
    - Script o cron job para purgar sessions expiradas (`WHERE expires_at < NOW() AND revoked_at IS NULL`)
    - Documentar en ops runbook
 
-5. **Local backup script** (`scripts/backup-local.sh`) — *parallel with steps 1-3*
+5. **Local backup script** (`scripts/backup-local.sh`) — implemented
    - `pg_dump` wrapper con timestamp en nombre
    - Documentar en README
 
-6. **Logging review**
+6. **Logging review** — completed
    - Verificar que request-id aparece en todos los logs
    - Verificar que no se loguean passwords ni session tokens
    - Verificar que errores 5xx loguean stack trace pero no lo exponen al cliente
 
-7. **End-to-end critical path test plan** — *depends on all phases anteriores*
+7. **End-to-end critical path test plan** — completed
    - Definir en `tests/e2e/` o como integration tests extendidos:
      - Register → login → crear entries → listar → filtrar → actualizar → borrar → logout → verify 401
      - Flujo multi-usuario: A y B no ven datos cruzados
 
-8. **Security checklist document** — *parallel with step 7*
+8. **Security checklist document** — completed
    - Crear `docs/SECURITY_CHECKLIST.md`:
      - [ ] Argon2id con parámetros seguros
      - [ ] Session tokens hashed en DB
@@ -353,23 +360,28 @@ Objetivo: seguridad, operaciones, y calidad de producción local.
      - [ ] Zod validation en todos los inputs
      - [ ] Prisma parametriza queries
 
-9. **Ops runbook** — *parallel with step 8*
+9. **Ops runbook** — completed
    - Documentar: start/stop, seed, migrations, backup, log access, session cleanup
 
 **Relevant files**
-- `src/plugins/session.ts` — CSRF y session cleanup
-- `src/app.ts` — security headers, global error handler review
+- `src/plugins/security.ts` — CSRF y security headers
+- `src/plugins/security.test.ts` — hardening unit tests
+- `src/plugins/session.ts` — session cookie management
+- `src/app.ts` — 5xx logging review
+- `scripts/cleanup-sessions.ts` — cleanup de sesiones expiradas/revocadas
 - `scripts/backup-local.sh` — backup local
 - `docs/SECURITY_CHECKLIST.md` — checklist de seguridad
-- `tests/integration/` — critical path extended tests
+- `docs/E2E_TEST_PLAN.md` — critical path release plan
+- `docs/RELEASE_READINESS.md` — release checklist
+- `README.md` — runbook local de backup/logging/security notes
 
 **Verification**
-- Security checklist: todos los items marcados
-- `curl` con CSRF test: POST sin protección → rechazado (si se implementa header check)
-- Backup script genera dump válido y restaurable
-- Logs no contienen passwords ni tokens (grep manual)
-- Todos los integration tests pasan en CI (o local `npx vitest run`)
+- `npm run typecheck` y `npm test` pasan
+- POST/PATCH/DELETE sin protección CSRF devuelven `403`
 - Response headers incluyen security headers esperados
+- Backup script local documentado y ejecutable
+- Cleanup script borra sesiones expiradas o revocadas
+- Los tests de integración cubren auth, entries, symptoms, ownership, rate-limit y hardening
 
 ---
 

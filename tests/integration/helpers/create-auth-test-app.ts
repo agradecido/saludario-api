@@ -10,6 +10,7 @@ import { categoriesRoutes } from "../../../src/modules/categories/categories.rou
 import { entriesRoutes } from "../../../src/modules/entries/entries.routes.js";
 import { symptomsRoutes } from "../../../src/modules/symptoms/symptoms.routes.js";
 import { rateLimitPlugin } from "../../../src/plugins/rate-limit.js";
+import { securityPlugin } from "../../../src/plugins/security.js";
 import { sessionPlugin } from "../../../src/plugins/session.js";
 
 interface TestUserRecord {
@@ -549,6 +550,7 @@ export async function createAuthTestApp(): Promise<{
 
   await app.register(sessionPlugin);
   await app.register(rateLimitPlugin);
+  await app.register(securityPlugin);
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
   await app.register(categoriesRoutes, { prefix: "/api/v1/categories" });
   await app.register(entriesRoutes, { prefix: "/api/v1/entries" });

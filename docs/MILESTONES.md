@@ -77,10 +77,10 @@ Objectives:
 - Prepare MVP handoff for implementation execution
 
 Checklist:
-- [ ] End-to-end critical-path test plan completed
+- [x] End-to-end critical-path test plan completed (`docs/E2E_TEST_PLAN.md`, March 13, 2026)
 - [ ] Security specialist review completed
-- [ ] MVP release readiness checklist completed
-- [ ] Local backup and log workflow documented
+- [x] MVP release readiness checklist completed (`docs/RELEASE_READINESS.md`, March 13, 2026)
+- [x] Local backup and log workflow documented (`README.md`, March 13, 2026)
 
 Exit criteria:
 - MVP plan is implementation-ready with explicit security and quality gates

@@ -38,6 +38,9 @@ Backend API for Saludario, a web-based food diary focused on health tracking.
 - API contract baseline: [docs/API_CONTRACT.md](./docs/API_CONTRACT.md)
 - Architecture & folder conventions: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 - Schema & migration plan: [docs/SCHEMA_PLAN.md](./docs/SCHEMA_PLAN.md)
+- Security checklist: [docs/SECURITY_CHECKLIST.md](./docs/SECURITY_CHECKLIST.md)
+- End-to-end test plan: [docs/E2E_TEST_PLAN.md](./docs/E2E_TEST_PLAN.md)
+- Release readiness checklist: [docs/RELEASE_READINESS.md](./docs/RELEASE_READINESS.md)
 - Delivery milestones: [docs/MILESTONES.md](./docs/MILESTONES.md)
 - Agent/operating rules: [AGENTS.md](./AGENTS.md)
 
@@ -93,6 +96,17 @@ Backend API for Saludario, a web-based food diary focused on health tracking.
 
 The API listens on `http://localhost:3000` by default.
 
+### Security Notes
+
+- State-changing requests (`POST`, `PATCH`, `DELETE`) must include:
+
+  ```bash
+  X-Requested-With: XMLHttpRequest
+  ```
+
+- Responses include request tracing via `x-request-id`.
+- API hardening details live in [docs/SECURITY_CHECKLIST.md](./docs/SECURITY_CHECKLIST.md).
+
 ### Useful Commands
 
 - Run the local validation gate:
@@ -118,6 +132,25 @@ The API listens on `http://localhost:3000` by default.
   ```bash
   docker compose stop db
   ```
+
+- Remove expired and revoked sessions:
+
+  ```bash
+  npm run db:cleanup-sessions
+  ```
+
+- Create a local PostgreSQL backup:
+
+  ```bash
+  npm run db:backup-local
+  ```
+
+### Logging and Backups
+
+- Request logs include a request id and are emitted to stdout through Pino.
+- Do not log passwords or session tokens.
+- Local backups are created with `pg_dump` in `./backups` by default.
+- Run a local restore drill before any release-like milestone.
 
 ### Git Hooks
 

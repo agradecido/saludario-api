@@ -12,6 +12,7 @@ import { entriesRoutes } from "./modules/entries/entries.routes.js";
 import { symptomsRoutes } from "./modules/symptoms/symptoms.routes.js";
 import { prismaPlugin } from "./plugins/prisma.js";
 import { rateLimitPlugin } from "./plugins/rate-limit.js";
+import { securityPlugin } from "./plugins/security.js";
 import { sessionPlugin } from "./plugins/session.js";
 
 export function zodValidatorCompiler({ schema }: { schema: unknown }) {
@@ -97,6 +98,15 @@ export function setAppErrorHandler(app: FastifyInstance | { setErrorHandler: (..
           ? ((error as { message?: string }).message ?? "Too many requests.")
           : "An unexpected error occurred.";
 
+    if (statusCode >= 500) {
+      request.log.error(
+        {
+          err: error
+        },
+        "request failed"
+      );
+    }
+
     const problem = createProblem(statusCode, code, title, detail, {
       instance: request.url,
       request_id: request.id
@@ -119,6 +129,7 @@ export async function createApp() {
   await app.register(prismaPlugin);
   await app.register(sessionPlugin);
   await app.register(rateLimitPlugin);
+  await app.register(securityPlugin);
   setAppErrorHandler(app);
 
   app.get("/api/v1/health", async () => {

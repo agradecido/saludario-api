@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { SESSION_COOKIE_NAME } from "../../src/config/session.js";
+import { CSRF_HEADER_NAME, CSRF_HEADER_VALUE } from "../../src/plugins/security.js";
 import { createAuthTestApp } from "./helpers/create-auth-test-app.js";
+
+const STATE_CHANGING_HEADERS = {
+  [CSRF_HEADER_NAME]: CSRF_HEADER_VALUE
+};
 
 function readSessionCookie(setCookieHeader: string | string[] | undefined): string | null {
   const header = Array.isArray(setCookieHeader) ? setCookieHeader[0] : setCookieHeader;
@@ -20,6 +25,7 @@ async function registerUser(
   const response = await app.inject({
     method: "POST",
     url: "/api/v1/auth/register",
+    headers: STATE_CHANGING_HEADERS,
     payload: {
       email,
       password: "strong-password",
@@ -53,6 +59,7 @@ describe("symptom routes", () => {
     const createResponse = await app.inject({
       method: "POST",
       url: "/api/v1/internal/symptoms/events",
+      headers: STATE_CHANGING_HEADERS,
       cookies: {
         [SESSION_COOKIE_NAME]: sessionToken
       },
@@ -116,6 +123,7 @@ describe("symptom routes", () => {
       await app.inject({
         method: "POST",
         url: "/api/v1/internal/symptoms/events",
+        headers: STATE_CHANGING_HEADERS,
         cookies: {
           [SESSION_COOKIE_NAME]: sessionToken
         },
@@ -191,6 +199,7 @@ describe("symptom routes", () => {
     const createResponse = await app.inject({
       method: "POST",
       url: "/api/v1/internal/symptoms/events",
+      headers: STATE_CHANGING_HEADERS,
       cookies: {
         [SESSION_COOKIE_NAME]: userASession
       },
@@ -226,6 +235,7 @@ describe("symptom routes", () => {
     const invalidSeverityResponse = await app.inject({
       method: "POST",
       url: "/api/v1/internal/symptoms/events",
+      headers: STATE_CHANGING_HEADERS,
       cookies: {
         [SESSION_COOKIE_NAME]: sessionToken
       },
