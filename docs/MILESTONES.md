@@ -51,7 +51,7 @@ Checklist:
 - [x] Food entry endpoint contract documented (`docs/API_CONTRACT.md`, March 8, 2026)
 - [x] Filter/query behavior specified (date range, category, pagination rules) (`docs/API_CONTRACT.md`, March 8, 2026)
 - [x] Last-write-wins update behavior explicitly documented (`docs/API_CONTRACT.md`, March 8, 2026)
-- [ ] Critical food-entry test scenarios defined
+- [x] Critical food-entry test scenarios defined (`docs/IMPLEMENTATION_STEPS.md`, March 13, 2026)
 
 Exit criteria:
 - Food diary core behavior is fully specified for MVP implementation

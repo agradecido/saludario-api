@@ -180,33 +180,38 @@ Objetivo: registro, login, logout, introspección de sesión, y hook `requireAut
 
 Objetivo: CRUD completo de food entries con filtros por fecha y categoría, paginación cursor, y endpoint de categorías.
 
+**Current progress**
+- [x] Categories service and protected route implemented
+- [x] Entries schemas, repository, service, and routes implemented
+- [x] Unit and integration coverage for CRUD, pagination, filters, and ownership implemented
+
 **Steps**
 
-1. **Categories service + routes** — sin dependencias bloqueantes
+1. **Categories service + routes** — implemented
    - `src/modules/categories/categories.service.ts`: `listAll()` → devuelve las 4 categorías ordenadas
    - `src/modules/categories/categories.routes.ts`: `GET /api/v1/categories` (protected)
    - `src/modules/categories/categories.test.ts`
 
-2. **Entries schemas** (`src/modules/entries/entries.schemas.ts`) — *parallel with step 1*
+2. **Entries schemas** (`src/modules/entries/entries.schemas.ts`) — implemented
    - `createEntrySchema`: meal_category_code (enum), food_name (string, max 500), quantity_value?, quantity_unit?, notes?, consumed_at (ISO datetime)
    - `updateEntrySchema`: partial del anterior (todos opcionales excepto al menos uno requerido)
    - `listEntriesQuerySchema`: from?, to?, meal_category_code?, limit?, cursor?
    - `entryParamsSchema`: entry_id (UUID)
 
-3. **Entries repository** (`src/modules/entries/entries.repository.ts`) — *depends on step 2*
+3. **Entries repository** (`src/modules/entries/entries.repository.ts`) — implemented
    - `create(userId, data)`: inserta food_entry con lookup de meal_category_id por code
    - `findById(id, userId)`: busca por id + userId (ownership)
    - `update(id, userId, data)`: partial update, last-write-wins
    - `remove(id, userId)`: hard delete
    - `list(userId, filters)`: query con filtros opcionales (from, to, meal_category_code) + cursor pagination `(consumed_at DESC, id DESC)`
 
-4. **Entries service** (`src/modules/entries/entries.service.ts`) — *depends on step 3*
+4. **Entries service** (`src/modules/entries/entries.service.ts`) — implemented
    - Orquesta repository calls
    - Valida que `meal_category_code` existe
    - Mapea `meal_category_id` ↔ `meal_category_code` para API responses
    - Aplica cursor encode/decode de `common/pagination.ts`
 
-5. **Entries routes** (`src/modules/entries/entries.routes.ts`) — *depends on steps 4, 5 de Phase 2 (requireAuth)*
+5. **Entries routes** (`src/modules/entries/entries.routes.ts`) — implemented
    - `POST /api/v1/entries` → 201
    - `GET /api/v1/entries` → 200 con paginación
    - `GET /api/v1/entries/:entry_id` → 200 / 404
@@ -214,12 +219,12 @@ Objetivo: CRUD completo de food entries con filtros por fecha y categoría, pagi
    - `DELETE /api/v1/entries/:entry_id` → 204 / 404
    - Todos protegidos con `requireAuth`
 
-6. **Entries unit tests** (`src/modules/entries/entries.test.ts`) — *depends on step 4*
+6. **Entries unit tests** (`src/modules/entries/entries.test.ts`, `src/modules/categories/categories.test.ts`) — implemented
    - Cursor encode/decode round-trip
    - Category code validation
    - Ownership filtering lógica
 
-7. **Entries integration tests** (`tests/integration/entries.integration.test.ts`) — *depends on step 5*
+7. **Entries integration tests** (`tests/integration/entries.integration.test.ts`) — implemented
    - CRUD completo: create → get → update → get (verificar cambio) → delete → get (404)
    - Listado con paginación: crear 25 entries → primer page tiene 20 + has_more=true → second page con cursor tiene 5 + has_more=false
    - Filtro por date range
@@ -230,20 +235,22 @@ Objetivo: CRUD completo de food entries con filtros por fecha y categoría, pagi
 
 **Relevant files**
 - `src/modules/categories/categories.routes.ts` — GET /categories
+- `src/modules/categories/categories.service.ts` — category listing and response mapping
 - `src/modules/entries/entries.routes.ts` — CRUD endpoints según API_CONTRACT.md §6
 - `src/modules/entries/entries.service.ts` — lógica de negocio, ownership, mapping category code↔id
 - `src/modules/entries/entries.repository.ts` — queries Prisma con cursor pagination
 - `src/modules/entries/entries.schemas.ts` — validación Zod
 - `src/common/pagination.ts` — reusar cursor encode/decode
 - `tests/integration/entries.integration.test.ts` — tests CRUD + pagination + ownership
+- `tests/integration/helpers/create-auth-test-app.ts` — harness stateful para auth + categories + entries
 
 **Verification**
-- Integration tests pasan: CRUD cycle, pagination, filters, ownership isolation
-- `curl` manual: crear entry → listar → ver detalle → actualizar → borrar
+- `npm run typecheck` y `npm test` pasan
+- Integration tests pasan: categories, CRUD cycle, pagination, filters, ownership isolation, invalid payloads, and unauthenticated access
 - Paginación: crear >20 entries, verificar `has_more` + `next_cursor` funciona
 - Filtro por fecha y categoría devuelve resultados correctos
 - Entry de otro usuario devuelve 404 (no 403)
-- Response shapes coinciden exactamente con API_CONTRACT.md §6
+- Response shapes coinciden con API_CONTRACT.md §5 y §6
 
 ---
 
