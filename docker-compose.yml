@@ -1,27 +1,28 @@
 services:
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    environment:
+      - DATABASE_URL=pgsql:host=db;port=5432;dbname=saludario;user=postgres;password=postgres
+      - SESSION_SECRET=secret
+    depends_on:
+      - db
+    command: php -S 0.0.0.0:3000 -t public public/index.php
+
   db:
     image: postgres:16-alpine
     environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: saludario
-      POSTGRES_USER: saludario
-      POSTGRES_PASSWORD: localdev
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  api:
-    build:
-      context: .
-      target: runtime
-    depends_on:
-      - db
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    volumes:
-      - ./src:/app/src
 
 volumes:
   pgdata:

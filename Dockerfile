@@ -1,24 +1,16 @@
-# syntax=docker/dockerfile:1
+FROM php:8.3-cli
 
-FROM node:22-alpine AS base
-WORKDIR /app
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    unzip \
+    && docker-php-ext-install pdo pdo_pgsql
 
-FROM base AS deps
-COPY package*.json ./
-RUN npm ci
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-FROM deps AS build
-COPY tsconfig.json vitest.config.ts ./
-COPY src ./src
-RUN npm run build
+WORKDIR /var/www/html
+COPY . .
 
-FROM node:22-alpine AS runtime
-WORKDIR /app
-ENV NODE_ENV=production
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY package.json ./
+RUN composer install --optimize-autoloader
 
 EXPOSE 3000
-CMD ["node", "dist/server.js"]
+CMD ["php", "-S", "0.0.0.0:3000", "-t", "public", "public/index.php"]
