@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  timezone     String    @default("UTC")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  sessions      AuthSession[]
+  foodEntries   FoodEntry[]
+  symptomEvents SymptomEvent[]
+
+  @@map("users")
+}
+
+model MealCategory {
+  id        Int    @id @default(autoincrement())
+  code      String @unique
+  label     String
+  sortOrder Int    @default(0) @map("sort_order")
+
+  foodEntries FoodEntry[]
+
+  @@map("meal_categories")
+}
+
+model AuthSession {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  sessionTokenHash String    @map("session_token_hash")
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz
+  ipHash           String?   @map("ip_hash")
+  userAgent        String?   @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model FoodEntry {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  mealCategoryId Int      @map("meal_category_id")
+  foodName       String   @map("food_name")
+  quantityValue  Decimal? @map("quantity_value") @db.Decimal(10, 2)
+  quantityUnit   String?  @map("quantity_unit")
+  notes          String?
+  consumedAt     DateTime @map("consumed_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealCategory MealCategory @relation(fields: [mealCategoryId], references: [id])
+
+  @@index([userId, consumedAt(sort: Desc), id(sort: Desc)], map: "idx_entries_user_consumed_id")
+  @@index([userId, mealCategoryId, consumedAt(sort: Desc), id(sort: Desc)], map: "idx_entries_user_cat_consumed_id")
+  @@map("food_entries")
+}
+
+model SymptomEvent {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  symptomCode String   @map("symptom_code")
+  severity    Int      @default(1)
+  occurredAt  DateTime @map("occurred_at") @db.Timestamptz
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt(sort: Desc), id(sort: Desc)], map: "idx_symptoms_user_occurred_id")
+  @@map("symptom_events")
+}
